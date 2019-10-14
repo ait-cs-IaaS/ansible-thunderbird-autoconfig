@@ -1,9 +1,6 @@
 # thunderbird-autoconfig
 
 Installs and makes thunderbird configurable through environment variables. It is possible to setup E-Mail accounts, contacts, smime certs, etc.
-## Requirements
-
-Requires the init process provided by the [phusion/baseimage](https://hub.docker.com/r/phusion/baseimage/) and assumes unity desktop is installed.
 
 ## Role Variables
 | Variable name                           | Type            | Default                  | Description                                                                                                                                                                                                                                                                                |
