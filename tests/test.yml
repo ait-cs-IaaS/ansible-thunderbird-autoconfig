@@ -1,5 +1,44 @@
 ---
-- hosts: localhost
-  remote_user: root
+- hosts: "{{ test_host | default('localhost') }}"
   roles:
-    - ait.phusion.thunderbird
+    - role: thunderbird-autoconfig
+      #vars:
+      #  thunderbird_mail_full_name: Example Name
+      #  thunderbird_mail_address: test@example.com
+      #  thunderbird_mail_password: test
+      #  thunderbird_mail_imap: 127.0.0.1
+      #  thunderbird_mail_smtp: 127.0.0.1
+      vars:
+        thunderbird_config:
+          - name: Test
+            email: test@local
+            user: test@local
+            smtpServer: 127.0.0.1
+            smtpPort: 433
+            smtpSock: 2
+            smtpAuth: 3
+            retrievServer: 127.0.0.1
+            retrievPort: 533
+            retrievSock: 2
+            retrievAuth: 3
+            mode: imap
+            cert: /home/test/smime_test_user.p12
+            cert_pw: test
+        thunderbird_contacts:
+          - FirstName: Bob
+            LastName: Example
+            PrimaryEmail: test@example.com
+            SecondEmail: test@example2.com
+            DisplayName: TestBob
+            NickName: testy
+          - FirstName: Alice
+            LastName: Example
+            PrimaryEmail: alice@example.com
+        thunderbird_mail_lists:
+          - name: Example Liste
+            nickname: example
+            description: This is a example mailing list
+            contacts:
+            - PrimaryEmail: test@example.com
+            - PrimaryEmail: alice@example.com
+

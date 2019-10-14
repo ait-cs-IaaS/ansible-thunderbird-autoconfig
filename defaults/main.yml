@@ -1,2 +1,5 @@
 ---
-# defaults file for ait.phusion.thunderbird
+# defaults file for thunderbird-autoconfig
+
+thunderbird_syspref: syspref.js
+thunderbird_autoconfig: thunderbird.cfg

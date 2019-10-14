@@ -1,20 +1,27 @@
 ---
-# tasks file for ait.phusion.thunderbird
+# tasks file for thunderbird-autoconfig
 
 - name: Install thunderbird
   apt:
-    name: thunderbird
+    name: "{{ 'thunderbird' if thunderbird_build is not defined else 'thunderbird='+thunderbird_build }}"
+    state: present
+  become: yes 
+  tags: [install]
 
 - name: Add custom syspref.js to activate auto config
   copy:
-    src:  syspref.js
+    src:  "{{ thunderbird_syspref }}"
     dest: /etc/thunderbird/syspref.js
     mode: 0644
+  become: yes
+  tags: [install,config]
 
 - name: Add custom thunderbird.cfg containing auto config
-  copy:
-    src:  thunderbird.cfg
+  template:
+    src:  "{{ thunderbird_autoconfig }}"
     dest: /usr/lib/thunderbird/thunderbird.cfg
     mode: 0644
+  become: yes
+  tags: [install,config]
 
   
