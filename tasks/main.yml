@@ -5,23 +5,21 @@
   apt:
     name: "{{ 'thunderbird' if thunderbird_build is not defined else 'thunderbird='+thunderbird_build }}"
     state: present
-  become: yes 
+  become: true
   tags: [install]
 
 - name: Add custom syspref.js to activate auto config
   copy:
-    src:  "{{ thunderbird_syspref }}"
+    src: "{{ thunderbird_syspref }}"
     dest: /etc/thunderbird/syspref.js
     mode: 0644
-  become: yes
-  tags: [install,config]
+  become: true
+  tags: [install, config]
 
 - name: Add custom thunderbird.cfg containing auto config
   template:
-    src:  "{{ thunderbird_autoconfig }}"
+    src: "{{ thunderbird_autoconfig }}"
     dest: /usr/lib/thunderbird/thunderbird.cfg
     mode: 0644
-  become: yes
-  tags: [install,config]
-
-  
+  become: true
+  tags: [install, config]

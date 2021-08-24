@@ -1,4 +1,4 @@
-# thunderbird-autoconfig
+# Ansible Role: thunderbird-autoconfig
 
 Installs and makes thunderbird configurable through environment variables. It is possible to setup E-Mail accounts, contacts, smime certs, etc.
 
@@ -155,8 +155,9 @@ Setup configuring a single E-Mail account through thunderbird_config, two contac
 
 # Licence
 
- GPL
+ GPL-3.0
 
 # Author information
 
  This role was created in 2019 by [Maximilian Frank](https://frank-maximilian.at)
+
