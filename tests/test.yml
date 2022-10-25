@@ -2,7 +2,7 @@
 - hosts: "{{ test_host | default('localhost') }}"
   roles:
     - role: thunderbird-autoconfig
-      #vars:
+      # vars:
       #  thunderbird_mail_full_name: Example Name
       #  thunderbird_mail_address: test@example.com
       #  thunderbird_mail_password: test
@@ -39,6 +39,5 @@
             nickname: example
             description: This is a example mailing list
             contacts:
-            - PrimaryEmail: test@example.com
-            - PrimaryEmail: alice@example.com
-
+              - PrimaryEmail: test@example.com
+              - PrimaryEmail: alice@example.com
