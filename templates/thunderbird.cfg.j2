@@ -22,6 +22,7 @@ pref("mail.provider.enabled", false);
 
 // Don't show WhatsNew on first run of new version
 pref("mailnews.start_page_override.mstone", "ignore");
+pref("mailnews.start_page.enabled", false);
 
 // Don't show 'know your rights' on first run
 pref("mail.rights.version", 1);
@@ -83,6 +84,7 @@ try {
     // transform MAIL_* data to dictionary
   var account = {};
   account.email = "{{ thunderbird_mail_address }}";
+  account.organization = "{{ thunderbird_mail_organization }}";
   account.smtpServer = "{{ thunderbird_mail_smtp }}";
   account.smtpPort = {{ thunderbird_mail_smtp_port | default(587, true) }};
   account.smtpSock = {{ thunderbird_mail_smtp_sock | default(thunderbird_mail_sock, true) | default(2, true) }};
@@ -261,12 +263,16 @@ try {
     pref("mail.server.server" + num + ".name", account.email);
     // Note: Port and socketType (encryption type e.g. ssl/startssl/none) interaction is weird
     // socketType always override port to use the default port for the chosen socketType
-    pref("mail.server.server" + num + ".socketType", account.retrievSock);
-    pref("mail.server.server" + num + ".authMethod", account.retrievAuth);
-    pref("mail.server.server" + num + ".port", account.retrievPort);
+    pref("mail.server.server" + num + ".socketType", 2);
+    pref("mail.server.server" + num + ".authMethod", 3);
+    pref("mail.server.server" + num + ".port", 143);
     pref("mail.server.server" + num + ".type", account.mode);
     pref("mail.server.server" + num + ".moveOnSpam", true);
     pref("mail.server.server" + num + ".moveTargetMode", 1);
+
+    pref("mail.server.server" + num + ".check_time", 1);
+    pref("mail.server.server" + num + ".force_select", "no-auto");
+    pref("mail.server.server" + num + ".login_at_startup", true);
 
     // folder settings and stuff
     pref("mail.server.server" + num + ".spamActionTargetFolder", account.mode + "://" + account.user + "@" + account.retrievServer + "/Junk");
@@ -286,7 +292,7 @@ try {
     pref("mail.identity.id" + num + ".tmpl_folder_picker_mode", "0");
 
 
-    pref("mail.identity.id" + num + ".organization", account.email);
+    pref("mail.identity.id" + num + ".organization", account.organization);
     pref("mail.identity.id" + num + ".overrideGlobal_Pref", true);
     pref("mail.identity.id" + num + ".reply_on_top", 1);
     pref("mail.identity.id" + num + ".sig_bottom", false);
@@ -296,10 +302,10 @@ try {
     pref("mail.smtpserver.smtp" + num + ".username", account.user);
     pref("mail.smtpserver.smtp" + num + ".description", account.email + " SMTP");
     pref("mail.smtpserver.smtp" + num + ".hostname", account.smtpServer);
-    pref("mail.smtpserver.smtp" + num + ".try_ssl", account.smtpSock);
-    pref("mail.smtpserver.smtp" + num + ".authMethod", account.smtpAuth);
-    pref("mail.smtpserver.smtp" + num + ".useSecAuth", false);
-    pref("mail.smtpserver.smtp" + num + ".port", account.smtpPort);
+    pref("mail.smtpserver.smtp" + num + ".try_ssl", 2);
+    pref("mail.smtpserver.smtp" + num + ".authMethod", 3);
+    pref("mail.smtpserver.smtp" + num + ".useSecAuth", true);
+    pref("mail.smtpserver.smtp" + num + ".port", 587);
 
     // Glue it all together
     pref("mail.account.account" + num + ".identities", "id" + num + "");

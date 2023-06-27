@@ -160,4 +160,3 @@ Setup configuring a single E-Mail account through thunderbird_config, two contac
 # Author information
 
  This role was created in 2019 by [Maximilian Frank](https://frank-maximilian.at)
-

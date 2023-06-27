@@ -1,3 +1,3 @@
 ---
 thunderbird_syspref: syspref.js
-thunderbird_autoconfig: thunderbird.cfg
+thunderbird_autoconfig: thunderbird.cfg.j2

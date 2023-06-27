@@ -1,23 +1,25 @@
 ---
 - name: Install thunderbird
   ansible.builtin.apt:
-    name: "{{ 'thunderbird' if thunderbird_build is not defined else 'thunderbird=' + thunderbird_build }}"
-    state: present
+      name:
+          "{{ 'thunderbird' if thunderbird_build is not defined else
+          'thunderbird=' + thunderbird_build }}"
+      state: present
   become: true
   tags: [install]
 
 - name: Add custom syspref.js to activate auto config
   ansible.builtin.copy:
-    src: "{{ thunderbird_syspref }}"
-    dest: /etc/thunderbird/syspref.js
-    mode: 0644
+      src: '{{ thunderbird_syspref }}'
+      dest: /etc/thunderbird/syspref.js
+      mode: '0644'
   become: true
   tags: [install, config]
 
 - name: Add custom thunderbird.cfg containing auto config
   ansible.builtin.template:
-    src: "{{ thunderbird_autoconfig }}"
-    dest: /usr/lib/thunderbird/thunderbird.cfg
-    mode: 0644
+      src: '{{ thunderbird_autoconfig }}'
+      dest: /usr/lib/thunderbird/thunderbird.cfg
+      mode: '0644'
   become: true
   tags: [install, config]
