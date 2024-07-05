@@ -28,6 +28,8 @@ lockPref('toolkit.telemetry.enabled', false);
 // Do not add undisclosed recipients to bcc only emails
 pref('mail.compose.add_undisclosed_recipients', false);
 
+// CERTIFICATES
+
 // utility function to get certificate database
 function getCertDB() {
   var certdb2 = Components.classes[
@@ -56,6 +58,14 @@ function addCertStrings(certStrings) {
     }
   }
 }
+
+addCertStrings([
+  {% for ca_cert in thunderbird_trusted_certs %}
+  `{{ lookup('file', ca_cert) }}`,
+  {% endfor %}
+]);
+
+// ACCOUNTS
 
 function registerLoginInfo(
   LoginManager,
@@ -183,44 +193,71 @@ function addAccount(num, account) {
   }
 }
 
-addCertStrings([
-  {% for ca_cert in thunderbird_trusted_certs %}
-  `{{ lookup('file', ca_cert) }}`,
-  {% endfor %}
-]);
-
-var mail = null;
-
 {% if thunderbird_config is defined %}
-  try {
-    mail = JSON.parse('{{ thunderbird_config | tojson }}');
-  } catch (ex) {
-    displayError("JSON.parse", ex);
-  }
+  var mail = JSON.parse('{{ thunderbird_config | tojson }}');
+
+  if (!getPref('ait.startup.done')) {
+    var smtpservers = [];
+    var accounts = [];
+  
+    if (mail) {
+      for (var i = 1; i <= mail.length; i++) {
+        addAccount(i, mail[i - 1]);
+  
+        pref('mail.smtp.defaultserver', 'smtp1');
+        pref('mail.accountmanager.defaultaccount', 'account1');
+  
+        accounts.push('account' + i);
+        smtpservers.push('smtp' + i);
+      }
+  
+      if (smtpservers != '') pref('mail.smtpservers', smtpservers.join(','));
+      if (accounts != '')
+        pref('mail.accountmanager.accounts', accounts.join(','));
+    }
+  }  
 {% endif %}
 
-if (!getPref('ait.startup.done')) {
-  var smtpservers = [];
-  var accounts = [];
+// ADDRESSBOOK / CONTACTS
 
-  if (mail) {
-    for (var i = 1; i <= mail.length; i++) {
-      addAccount(i, mail[i - 1]);
-
-      pref('mail.smtp.defaultserver', 'smtp1');
-      pref('mail.accountmanager.defaultaccount', 'account1');
-
-      accounts.push('account' + i);
-      smtpservers.push('smtp' + i);
+function getFirstAddressBook() {
+  var abManager = Components.classes["@mozilla.org/abmanager;1"].getService(Components.interfaces.nsIAbManager);
+  var allAddressBooks = abManager.directories;
+  for(i=0; i<allAddressBooks.length; i ++) {
+    let addressBook = allAddressBooks[i].QueryInterface(Components.interfaces.nsIAbDirectory);
+    if (addressBook instanceof Components.interfaces.nsIAbDirectory) { 
+      return addressBook;
     }
-
-    if (smtpservers != '') pref('mail.smtpservers', smtpservers.join(','));
-    if (accounts != '')
-      pref('mail.accountmanager.accounts', accounts.join(','));
   }
 }
 
+function contactToCard(contact) {
+  var card = Components.classes["@mozilla.org/addressbook/cardproperty;1"].createInstance(Components.interfaces.nsIAbCard);
+  for (var key in contact) {
+    if (contact.hasOwnProperty(key)) {
+      card.setProperty(key, contact[key]);
+    }
+  }
+  return card;
+}
+
+function addContact(addressbook, contact) {
+  var card = contactToCard(contact);
+  addressbook.addCard(card);
+}
+
+function addContacts(contacts) {
+  addressBook = getFirstAddressBook();
+  for (var i = 0; i < contacts.length; i++) {
+    addContact(addressBook, contacts[i]);
+  }
+}
+
+{% if thunderbird_contacts is defined %}
+  var contacts = JSON.parse('{{ thunderbird_contacts | tojson }}');
+  addContacts(contacts);
+{% endif %}
+
 pref('ait.startup.done', true);
 
-// TODO: Add contacts
 // TODO: Add SMIME support
