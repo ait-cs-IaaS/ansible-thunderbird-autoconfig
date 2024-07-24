@@ -109,7 +109,22 @@ function registerLoginInfo(
   LoginManager.addLogin(newLoginInfo);
 }
 
+// TODO: failed
+function addEmailCert(id, certMail, certPath, certPW, certdb) {
+  Components.utils.import("resource://gre/modules/FileUtils.jsm");
+  var certFile = FileUtils.File(certPath);
+  displayError('certFile', JSON.stringify(certFile));
+  certdb.importPKCS12File(certFile, certPW);
+}
+
 function addAccount(num, account) {
+
+// TODO: failed
+
+  // {% if thunderbird_mail_cert is defined %}
+  // displayError('definiert', JSON.stringify(thunderbird_mail_cert));
+  // addEmailCert(num, account.email, "{{ thunderbird_mail_cert }}", "{{ thunderbird_mail_cert_password | default('') }}", getCertDB());
+  // {% endif %}
 
   // Define the account
   pref('mail.account.account' + num + '.server', 'server' + num);
@@ -127,6 +142,8 @@ function addAccount(num, account) {
   pref("mail.server.server" + num + ".force_select", "no-auto");
   pref("mail.server.server" + num + ".login_at_startup", true);
   pref('mail.server.server' + num + '.directory-rel', '[ProfD]ImapMail/' + account.retrievServer);
+  pref("mail.server.server" + num + ".moveOnSpam", true);
+  pref("mail.server.server" + num + ".moveTargetMode", 1);
 
   // Define the identity
   pref('mail.identity.id' + num + '.fullName', account.user);
@@ -134,10 +151,13 @@ function addAccount(num, account) {
   pref('mail.identity.id' + num + '.smtpServer', 'smtp' + num);
   pref('mail.identity.id' + num + '.doBcc', false);
   pref('mail.identity.id' + num + '.archiveEnabled', false);
-  pref('mail.identity.id' + num + '.draft_folder', 'imap://' + account.user + '@' + account.retrievServer + '/Drafts');
-  pref('mail.identity.id' + num + '.fccFolder', 'imap://' + account.user + '@' + account.retrievServer + '/Sent');
-  pref('mail.identity.id' + num + '.stationeryFolder', 'imap://' + account.user + '@' + account.retrievServer + '/Templates');
+  pref('mail.identity.id' + num + '.draft_folder', 'imap://' + account.email + '@' + account.retrievServer + '/Drafts');
+  pref('mail.identity.id' + num + '.fccFolder', 'imap://' + account.email + '@' + account.retrievServer + '/Sent');
+  pref('mail.identity.id' + num + '.stationeryFolder', 'imap://' + account.email + '@' + account.retrievServer + '/Templates');
   pref('mail.identity.id' + num + '.sig_bottom', false);
+  pref('mail.identity.id' + num + '.fcc_folder_picker_mode', "0");
+  pref('mail.identity.id' + num + '.tmpl_folder_picker_mode', "0");
+  pref('mail.identity.id' + num + '.drafts_folder_picker_mode', "0");
 
   // Define the SMTP server
   pref('mail.smtpserver.smtp' + num + '.username', account.user);
@@ -147,9 +167,6 @@ function addAccount(num, account) {
   pref('mail.smtpserver.smtp' + num + '.authMethod', 3);
   pref('mail.smtpserver.smtp' + num + '.useSecAuth', true);
   pref('mail.smtpserver.smtp' + num + '.try_ssl', 2);
-
-  // Set default identities and accounts
-  pref('mail.accountmanager.localfoldersserver', 'server' + num);
 
   try {
     // Setup password for the account
@@ -203,13 +220,12 @@ function addAccount(num, account) {
     if (mail) {
       for (var i = 1; i <= mail.length; i++) {
         addAccount(i, mail[i - 1]);
-  
-        pref('mail.smtp.defaultserver', 'smtp1');
-        pref('mail.accountmanager.defaultaccount', 'account1');
-  
         accounts.push('account' + i);
         smtpservers.push('smtp' + i);
       }
+  
+      pref('mail.smtp.defaultserver', 'smtp1');
+      pref('mail.accountmanager.defaultaccount', 'account1');
   
       if (smtpservers != '') pref('mail.smtpservers', smtpservers.join(','));
       if (accounts != '')
