@@ -1,16 +1,43 @@
 ---
+- name: Set thunderbird_user
+  when: thunderbird_user is not defined
+  block:
+    - name: Get currently installed username
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          cut -d: -f1,3 /etc/passwd | egrep ':[0-9]{4}$' | cut -d: -f1
+      args:
+        executable: /bin/bash
+      register: _thunderbird_user
+      changed_when: false
+
+    - name: Set user to be used for customization
+      ansible.builtin.set_fact:
+        thunderbird_user: '{{ _thunderbird_user.stdout }}'
+
+- name: Remove thunderbird folder
+  become: true
+  ansible.builtin.file:
+    path: /home/{{ thunderbird_user }}/.thunderbird
+    state: absent
+
+- name: Kill all thunderbird processes
+  become: true
+  ansible.builtin.shell:
+    cmd: killall thunderbird
+  failed_when: false
+
 - name: Add custom syspref.js to activate auto config
+  become: true
   ansible.builtin.copy:
     src: '{{ thunderbird_syspref }}'
     dest: /etc/thunderbird/syspref.js
     mode: '0644'
-  become: true
-  tags: [install, config]
 
 - name: Add custom thunderbird.cfg containing auto config
+  become: true
   ansible.builtin.template:
     src: '{{ thunderbird_autoconfig }}'
     dest: /usr/lib/thunderbird/thunderbird.cfg
     mode: '0644'
-  become: true
-  tags: [install, config]

@@ -1,3 +1,4 @@
 ---
+thunderbird_user: ''
 thunderbird_syspref: syspref.js
 thunderbird_autoconfig: thunderbird.cfg.j2
