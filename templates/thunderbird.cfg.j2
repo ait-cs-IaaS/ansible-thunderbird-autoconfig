@@ -141,7 +141,7 @@ function addAccount(num, account) {
   pref("mail.server.server" + num + ".check_time", 1);
   pref("mail.server.server" + num + ".force_select", "no-auto");
   pref("mail.server.server" + num + ".login_at_startup", true);
-  pref('mail.server.server' + num + '.directory-rel', '[ProfD]ImapMail/' + account.retrievServer);
+  pref('mail.server.server' + num + '.directory-rel', '[ProfD]ImapMail/' + account.email);
   pref("mail.server.server" + num + ".moveOnSpam", true);
   pref("mail.server.server" + num + ".moveTargetMode", 1);
 
