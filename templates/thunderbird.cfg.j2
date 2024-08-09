@@ -59,11 +59,9 @@ function addCertStrings(certStrings) {
   }
 }
 
-addCertStrings([
-  {% for ca_cert in thunderbird_trusted_certs %}
-  `{{ lookup('file', ca_cert) }}`,
-  {% endfor %}
-]);
+addCertStrings(
+  {{ thunderbird_certs_strings | default([])}}
+);
 
 // ACCOUNTS
 

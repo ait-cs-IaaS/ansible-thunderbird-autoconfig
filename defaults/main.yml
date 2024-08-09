@@ -2,3 +2,7 @@
 thunderbird_user: ''
 thunderbird_syspref: syspref.js
 thunderbird_autoconfig: thunderbird.cfg.j2
+thunderbird_certs_strings: |
+  [{% for ca_cert in thunderbird_trusted_certs %}
+  `{{ lookup('file', ca_cert) }}`,
+  {% endfor %}]
