@@ -209,7 +209,20 @@ function addAccount(num, account) {
 }
 
 {% if thunderbird_config is defined %}
-  var mail = JSON.parse('{{ thunderbird_config | tojson }}');
+  var mailaccounts_list = JSON.parse('{{ thunderbird_config | tojson }}');
+
+  const defaults = {
+      cert_pw : null,
+      mode : "imap",
+      retrievPort : "143",
+      retrievSock : "2",
+      retrievAuth : "3",
+      smtpPort : "587",
+      smtpSock : "2",
+      smtpAuth : "3"
+  }
+
+  const mail = mailaccounts_list.map(item => Object.assign({}, defaults, item));
 
   if (!getPref('ait.startup.done')) {
     var smtpservers = [];
