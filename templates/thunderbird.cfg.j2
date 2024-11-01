@@ -129,9 +129,13 @@ function addAccount(num, account) {
   pref('mail.account.account' + num + '.identities', 'id' + num);
 
   // Define the server
-  pref('mail.server.server' + num + '.hostname', account.retrievServer);
-  pref('mail.server.server' + num + '.userName', account.user);
+  if (account.name) {
+  pref('mail.server.server' + num + '.name', account.name);
+  } else {
   pref('mail.server.server' + num + '.name', account.email);
+  }
+  pref('mail.server.server' + num + '.userName', account.user);
+  pref('mail.server.server' + num + '.hostname', account.retrievServer);
   pref('mail.server.server' + num + '.type', 'imap');
   pref('mail.server.server' + num + '.port', 143);
   pref('mail.server.server' + num + '.socketType', 2);
