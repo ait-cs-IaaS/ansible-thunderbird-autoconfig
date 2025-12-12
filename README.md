@@ -1,156 +1,92 @@
 # Ansible Role: thunderbird-autoconfig
 
-Installs and makes thunderbird configurable through environment variables. It is possible to setup E-Mail accounts, contacts, smime certs, etc.
+Provision Thunderbird with a locked auto-config, pre-seeded accounts/contacts, optional CA certificates, and multi-profile support (VNC-friendly by default).
+
+## What this role does
+- Stops Thunderbird and removes the existing profile directory before applying changes.
+- Installs `syspref.js` and `thunderbird.cfg` under `/etc/thunderbird` and `/usr/lib/thunderbird`.
+- Creates `profiles.ini`, `installs.ini`, and profile directories for `profile.default` plus every entry in `thunderbird_profile_names`.
+- Patches `/usr/lib/thunderbird/thunderbird.sh` so VNC sessions use `vnc<DISPLAY>` profile names, matching the defaults in `thunderbird_profile_names`.
+- Imports trusted CA certificates and seeds accounts/address book entries on first start when provided.
 
 ## Role Variables
-| Variable name                           | Type            | Default                  | Description                                                                                                                                                                                                                                                                                |
-| --------------------------------------- | --------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| thunderbird_syspref                     | file path       | syspref.js               | Can be used to replace the default syspref file                                                                                                                                                                                                                                            |
-| thunderbird_autoconfig                  | file path       | thunderbird.cfg          | Can be used to replace the default autoconfig                                                                                                                                                                                                                                              |
-| thunderbird_mail_full_name              | string          |                          | Defines the fullname of the thunderbird mail account                                                                                                                                                                                                                                       |
-| thunderbird_mail_address                | email           |                          | Defines the email of the thunderbird mail account                                                                                                                                                                                                                                          |
-| thunderbird_mail_user                   | string          | `thunderbird_mail_address` | Defines the user used to log into the mail servers, defaults to the email                                                                                                                                                                                                                  |
-| thunderbird_mail_password               | string          |                          | Defines the user password (optional)                                                                                                                                                                                                                                                       |
-| thunderbird_mail_cert                   | file path       |                          | Defines the smime certificate file used for signing (optional)                                                                                                                                                                                                                             |
-| thunderbird_mail_cert_password          | string          |                          | The password to use for the certificate import ( not functional due to thunderbird bug)                                                                                                                                                                                                    |
-| thunderbird_mail_imap                   | hostname/ip     |                          | Defines the address of the imap server                                                                                                                                                                                                                                                     |
-| thunderbird_mail_imap_port              | int             | 143                      | Defines the port used for imap                                                                                                                                                                                                                                                             |
-| thunderbird_mail_imap_sock              | int             | 2                        | Defines the encryption type used for imap (0: no encryption, 2: STARTSSL, 3: SSL/TLS )                                                                                                                                                                                                     |
-| thunderbird_mail_imap_auth              | int             | 3                        | Defines the authentication method used for imap (1: no authentication (smtp only), 3: normal password, 4: encrypted password, 5: Kerberos/GSSAPI, 6: NTLM, 7: TLS Certificate, 8: OAuth2)                                                                                                  |
-| thunderbird_mail_pop3                   | hostname/ip     |                          | Defines the address of the pop3 server                                                                                                                                                                                                                                                     |
-| thunderbird_mail_pop3_port              | int             | 143                      | Defines the port used for pop3                                                                                                                                                                                                                                                             |
-| thunderbird_mail_pop3_sock              | int             | 2                        | Defines the encryption type used for pop3 (0: no encryption, 2: STARTSSL, 3: SSL/TLS )                                                                                                                                                                                                     |
-| thunderbird_mail_pop3_auth              | int             | 3                        | Defines the authentication method used for pop3 (1: no authentication (smtp only), 3: normal password, 4: encrypted password, 5: Kerberos/GSSAPI, 6: NTLM, 7: TLS Certificate, 8: OAuth2)                                                                                                  |
-| thunderbird_mail_smtp                   | hostname/ip     |                          | Defines the address of the smtp server                                                                                                                                                                                                                                                     |
-| thunderbird_mail_smtp_port              | int             | 143                      | Defines the port used for smtp                                                                                                                                                                                                                                                             |
-| thunderbird_mail_smtp_sock              | int             | 2                        | Defines the encryption type used for smtp (0: no encryption, 2: STARTSSL, 3: SSL/TLS )                                                                                                                                                                                                     |
-| thunderbird_mail_smtp_auth              | int             | 3                        | Defines the authentication method used for smtp (1: no authentication (smtp only), 3: normal password, 4: encrypted password, 5: Kerberos/GSSAPI, 6: NTLM, 7: TLS Certificate, 8: OAuth2)                                                                                                  |
-| thunderbird_mail_mode                   | string          | imap                     | Defines the email retrieval mode i.e. imap or pop3                                                                                                                                                                                                                                         |
-| thunderbird_config                      | list[dict]      |                          | Configures the mail accounts using the supplied dict. This supersedes the other variables i.e. if it is set all other `thunderbird_mail_*` variables (excluding `thunderbird_mail_lists`) will be ignored.                                                                                 |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.name          | string          |                          | Fullname of the account user                                                                                                                                                                                                                                                               |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.email         | email           |                          | E-mail address                                                                                                                                                                                                                                                                             |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.user          | string          |  | Username used for the mail servers                                                                                                                                                                                                                                                         |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.password      | string          |                          | User Password (optional)                                                                                                                                                                                                                                                                   |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.cert          | file path       |                          | Path to the certificate used for signing (optional)                                                                                                                                                                                                                                        |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.cert_pw       | string          |                          | The password to use for the certificate import ( not functional due to thunderbird bug)                                                                                                                                                                                                    |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.retrievServer | hostname/ip     |                          | IMAP/POP3 server address                                                                                                                                                                                                                                                                   |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.retrievPort   | int             |                          | IMAP/POP3 port number                                                                                                                                                                                                                                                                      |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.retrievSock   | int             |                          | Defines the encryption type used for imap/pop3 (0: no encryption, 2: STARTSSL, 3: SSL/TLS                                                                                                                                                                                                  |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.retrievAuth   | int             |                          | Defines the authentication method used for imap/pop3 (1: no authentication (smtp only), 3: normal password, 4: encrypted password, 5: Kerberos/GSSAPI, 6: NTLM, 7: TLS Certificate, 8: OAuth2)                                                                                             |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.mode          | imap/pop3       |                          | Defines retrieval server type                                                                                                                                                                                                                                                              |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.smtpServer    | hostname/ip     |                          | SMTP server address                                                                                                                                                                                                                                                                        |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.smtpPort      | int             |                          | SMTP port number                                                                                                                                                                                                                                                                           |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.smtpSock      | int             |                          | Defines the encryption type used for smtp (0: no encryption, 2: STARTSSL, 3: SSL/TLS                                                                                                                                                                                                       |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.smtpAuth      | int             |                          | Defines the authentication method used for smtp (1: no authentication (smtp only), 3: normal password, 4: encrypted password, 5: Kerberos/GSSAPI, 6: NTLM, 7: TLS Certificate, 8: OAuth2)                                                                                                  |
-| thunderbird_contacts                    | list[dict]      |                          | Configures the thunderbird address book. Expects a list of dictionaries containing thunderbird nsIAbCard properties. See https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/nsIAbCard_(Tb3)                                                                             |
-| thunderbird_mail_lists                  | list[dict]      |                          | Configures thunderbird mailing lists.                                                                                                                                                                                                                                                      |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.name          | string          |                          | Name of the Mailing List                                                                                                                                                                                                                                                                   |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.nickname      | string          |                          | Nickname used for the mailing list (optional)                                                                                                                                                                                                                                              |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.description   | string          |                          | Description for the mailling list (optional)                                                                                                                                                                                                                                               |
-| &nbsp;&nbsp;&nbsp;&nbsp;∟.contacts      | list[dict]      |                          | List of contacts part of the mailing list (same format as `thunderbird_contacts`). Note that contacts defined here overwrite contacts defined in `thunderbird_contacts` if they use the same primary email. This behavior can be avoided by only providing the primary email in this list. |
-| thunderbird_cert_files                  | list[file path] |                          | List of CA certificate file locations to be installed in thunderbird.                                                                                                                                                                                                                      |
-### Example configs
 
-Setup configuring a single E-Mail account through the `thunderbird_mail_*`` variables:
+### Profile and file layout
+| Variable | Default | Description |
+| --- | --- | --- |
+| `thunderbird_user` | auto-detected first user with UID >= 1000 | User whose Thunderbird config is managed; set explicitly to override detection. |
+| `thunderbird_config_dir` | `/home/{{ thunderbird_user }}/.thunderbird` | Thunderbird configuration directory that will be replaced. |
+| `thunderbird_syspref` | `syspref.js` | Source file copied to `/etc/thunderbird/syspref.js` to activate autoconfig. |
+| `thunderbird_autoconfig` | `thunderbird.cfg.j2` | Template/file rendered to `/usr/lib/thunderbird/thunderbird.cfg`. |
+| `thunderbird_profiles_ini` | `profiles.ini` | Template used to write `profiles.ini` inside `thunderbird_config_dir`. |
+| `thunderbird_installs_ini` | `installs.ini` | Template used to write `installs.ini` inside `thunderbird_config_dir`. |
+| `thunderbird_profiles_version` | `FDC34C9F024745EB` | Install identifier used in the ini files. |
+| `thunderbird_profile_names` | `['vnc0', 'vnc1', 'vnc2']` | Extra profiles created alongside `profile.default`; the patched launcher will pick `vnc<DISPLAY>` automatically, so keep names in sync with expected display numbers. |
 
+### Account and data setup
+| Variable | Default | Description |
+| --- | --- | --- |
+| `thunderbird_config` | `[]` | List of mail accounts to create (see account fields below). |
+| `thunderbird_contacts` | `[]` | List of address-book entries to add on first start. |
+| `thunderbird_trusted_certs` | `[]` | List of CA certificate file paths that will be imported into Thunderbird. |
+
+### `thunderbird_config` account fields
+| Field | Default | Description |
+| --- | --- | --- |
+| `name` | falls back to `email` | Display name for the account. |
+| `email` | required | Account email address. |
+| `user` | required | Username for IMAP/POP3 and SMTP. |
+| `password` | `null` | Password stored in the login manager when provided. |
+| `retrievServer` | required | IMAP/POP3 server hostname. |
+| `retrievPort` | `143` | Retrieval port. |
+| `retrievSock` | `2` | Retrieval socket option (0 none, 2 STARTTLS, 3 SSL/TLS). |
+| `retrievAuth` | `3` | Retrieval auth method (1 none, 3 normal password, 4 encrypted password, 5 Kerberos/GSSAPI, 6 NTLM, 7 TLS cert, 8 OAuth2). |
+| `mode` | `imap` | Retrieval mode placeholder (currently stored but not consumed by the template). |
+| `smtpServer` | required | SMTP server hostname. |
+| `smtpPort` | `587` | SMTP port. |
+| `smtpSock` | `2` | SMTP socket option (0 none, 2 STARTTLS, 3 SSL/TLS). |
+| `smtpAuth` | `3` | SMTP auth method (values as above). |
+| `cert` | `null` | Optional S/MIME certificate file (import depends on Thunderbird support). |
+| `cert_pw` | `null` | Password used for `cert` when required. |
+
+## Example playbook
+
+Provision multiple VNC profiles with one configured account, seeded contacts, and imported CA certs:
 
 ```yaml
 - hosts: "{{ test_host | default('localhost') }}"
   roles:
     - role: thunderbird-autoconfig
       vars:
-        thunderbird_mail_full_name: Example Name
-        thunderbird_mail_address: test@example.com
-        thunderbird_mail_password: test
-        thunderbird_mail_imap: 127.0.0.1
-        thunderbird_mail_imap_port: 143
-        thunderbird_mail_imap_sock: 2
-        thunderbird_mail_imap_auth: 3
-        thunderbird_mail_smtp: 127.0.0.1
-        thunderbird_mail_smtp_port: 587
-        thunderbird_mail_smtp_sock: 2
-        thunderbird_mail_smtp_auth: 3
-```
-
-
-Setup configuring two E-Mail accounts through thunderbird_config:
-
-
-```yaml
-- hosts: "{{ test_host | default('localhost') }}"
-  roles:
-    - role: thunderbird-autoconfig
-      vars:
-       thunderbird_config:
-         - name: Test
-           email: test@local
-           user: test@local
-           smtpServer: 127.0.0.1
-           smtpPort: 433
-           smtpSock: 2
-           smtpAuth: 3
-           retrievServer: 127.0.0.1
-           retrievPort: 533
-           retrievSock: 2
-           retrievAuth: 3
-           mode: imap
-           cert: /home/test/smime_test_user.p12
-           cert_pw: test
-         - name: Test2
-           email: test2@local
-           user: test2@local
-           smtpServer: 127.0.0.1
-           smtpPort: 433
-           smtpSock: 2
-           smtpAuth: 3
-           retrievServer: 127.0.0.1
-           retrievPort: 533
-           retrievSock: 2
-           retrievAuth: 3
-           mode: imap
-           cert: /home/test/smime_test_user2.p12
-```
-
-
-Setup configuring a single E-Mail account through thunderbird_config, two contacts, and a mailing list:
-
-```yaml
-- hosts: "{{ test_host | default('localhost') }}"
-  roles:
-    - role: thunderbird-autoconfig
-      vars:
+        thunderbird_profile_names:
+          - vnc0
+          - vnc1
+          - vnc2
+          - vnc3
+        thunderbird_trusted_certs:
+          - files/ca.crt
         thunderbird_config:
-          - name: Test
+          - name: Test User
             email: test@local
             user: test@local
+            password: test
             smtpServer: 127.0.0.1
-            smtpPort: 433
+            smtpPort: 587
             smtpSock: 2
             smtpAuth: 3
             retrievServer: 127.0.0.1
-            retrievPort: 533
-            retrievSock: 2
+            retrievPort: 993
+            retrievSock: 3
             retrievAuth: 3
             mode: imap
-            cert: /home/test/smime_test_user.p12
-            cert_pw: test
         thunderbird_contacts:
           - FirstName: Bob
             LastName: Example
             PrimaryEmail: test@example.com
-            SecondEmail: test@example2.com
-            DisplayName: TestBob
-            NickName: testy
+            DisplayName: Bob Example
           - FirstName: Alice
             LastName: Example
             PrimaryEmail: alice@example.com
-        thunderbird_mail_lists:
-          - name: Example Liste
-            nickname: example
-            description: This is a example mailing list
-            contacts:
-            - PrimaryEmail: test@example.com
-            - PrimaryEmail: alice@example.com
 ```
 
 # Licence
@@ -159,4 +95,4 @@ Setup configuring a single E-Mail account through thunderbird_config, two contac
 
 # Author information
 
- This role was created in 2019 by [Maximilian Frank](https://frank-maximilian.at)
+ This role was created in 2019 by [Maximilian Frank](https://frank-maximilian.at) adapted by Lenhard Reuter (AIT)

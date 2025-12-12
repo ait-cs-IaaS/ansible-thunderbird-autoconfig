@@ -1,8 +1,17 @@
 ---
-thunderbird_user: ''
+# thunderbird_user: ""
+thunderbird_config_dir: /home/{{ thunderbird_user }}/.thunderbird
 thunderbird_syspref: syspref.js
+thunderbird_profiles_ini: profiles.ini
+thunderbird_installs_ini: installs.ini
+thunderbird_profiles_version: FDC34C9F024745EB
 thunderbird_autoconfig: thunderbird.cfg.j2
 thunderbird_certs_strings: |
   [{% for ca_cert in thunderbird_trusted_certs %}
   `{{ lookup('file', ca_cert) }}`,
   {% endfor %}]
+
+thunderbird_profile_names:
+  - vnc0
+  - vnc1
+  - vnc2

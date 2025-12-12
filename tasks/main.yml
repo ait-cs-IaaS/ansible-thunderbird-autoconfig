@@ -14,30 +14,75 @@
 
     - name: Set user to be used for customization
       ansible.builtin.set_fact:
-        thunderbird_user: '{{ _thunderbird_user.stdout }}'
+        thunderbird_user: "{{ _thunderbird_user.stdout }}"
 
 - name: Remove thunderbird folder
   become: true
   ansible.builtin.file:
-    path: /home/{{ thunderbird_user }}/.thunderbird
+    path: "{{ thunderbird_config_dir }}"
     state: absent
 
 - name: Kill all thunderbird processes
   become: true
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: killall thunderbird
   failed_when: false
 
 - name: Add custom syspref.js to activate auto config
   become: true
   ansible.builtin.copy:
-    src: '{{ thunderbird_syspref }}'
+    src: "{{ thunderbird_syspref }}"
     dest: /etc/thunderbird/syspref.js
-    mode: '0644'
+    mode: "0644"
 
 - name: Add custom thunderbird.cfg containing auto config
   become: true
   ansible.builtin.template:
-    src: '{{ thunderbird_autoconfig }}'
+    src: "{{ thunderbird_autoconfig }}"
     dest: /usr/lib/thunderbird/thunderbird.cfg
-    mode: '0644'
+    mode: "0644"
+
+- name: Create firefox config directory in user home
+  become: true
+  ansible.builtin.file:
+    path: "{{ thunderbird_config_dir }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ thunderbird_user }}"
+    group: "{{ thunderbird_user }}"
+
+- name: Create thunderbird profile directory in user home
+  become: true
+  ansible.builtin.file:
+    path: "{{ thunderbird_config_dir }}/profile.{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ thunderbird_user }}"
+    group: "{{ thunderbird_user }}"
+  loop: "{{ ['default'] + thunderbird_profile_names | default([]) }}"
+
+- name: Add custom installs.ini
+  become: true
+  ansible.builtin.template:
+    src: "{{ thunderbird_installs_ini }}"
+    dest: "{{ thunderbird_config_dir }}/installs.ini"
+    mode: "0644"
+    owner: "{{ thunderbird_user }}"
+    group: "{{ thunderbird_user }}"
+
+- name: Add custom profiles.ini
+  become: true
+  ansible.builtin.template:
+    src: "{{ thunderbird_profiles_ini }}"
+    dest: "{{ thunderbird_config_dir }}/profiles.ini"
+    mode: "0644"
+    owner: "{{ thunderbird_user }}"
+    group: "{{ thunderbird_user }}"
+
+- name: Patch thunderbird.sh to auto-select VNC profile based on DISPLAY
+  become: true
+  ansible.builtin.replace:
+    path: /usr/lib/thunderbird/thunderbird.sh
+    backup: true
+    regexp: ^.+exec \$MOZ_LIBDIR/\$EXE.*$
+    replace: '    exec $MOZ_LIBDIR/$EXE --no-remote -P "vnc$(echo "$DISPLAY" | tr -d :)" "$@"'
