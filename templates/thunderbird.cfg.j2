@@ -104,7 +104,9 @@ function registerLoginInfo(
     '',
     '',
   );
-  LoginManager.addLogin(newLoginInfo);
+  LoginManager.initializationPromise
+  .then(() => LoginManager.addLoginAsync(newLoginInfo))
+  .catch(e => dump("LoginManager addLoginAsync failed: " + e + "\n"));
 }
 
 // TODO: failed
